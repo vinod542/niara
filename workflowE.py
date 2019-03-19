@@ -60,6 +60,6 @@ if __name__ == '__main__':
                         pattern = 'watchlist_purger.l*'
                         flocation(pattern, s1, workflow)
                    else:
-                   print "Done"
+                        print "Done"
                     
 pass
