@@ -15,7 +15,7 @@ def flocation(pattern, s1, workflow):
                               if any(part in line for part in "Start workflow "+s1):
                                    begin="Start workflow "+workflow
                                    end="Finish workflow "+s1
-                                   file1.write(subprocess.call([‘sed’, ‘s/begin/end/g’,route]))
+                                   file1.write(subprocess.call(['sed', 's/begin/end/g',route]))
                     
 if __name__ == '__main__':
     workflows= ['BatchDataBackupPipeLine', 'CefFeyeCorrPipeLine', 'EntityScoring', 'EventAggregator', 'FeedPipeLine', 'FilePurger', 'LogIngestionPipeLine' 'ObjectPipeLine', 'RetentionPurgerPipeLine',
