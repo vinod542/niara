@@ -6,7 +6,7 @@ urce_instance where workflow.message != 'success' and active_events.reported_tim
 echo "select distinct on (name) name from jointly;" | psql -d niara | sed '1,2d' | head -n -2 > failedWF.txt
 while read wflows
         do
-        echo "select name, batch_id from jointly where name = '$wflows' order by batch_id desc limit 4;" | psql -d niara | sed '1,2d' | awk '{print $1,$3}' >> failedbatches.txt
+        echo "select name, batch_id from jointly where name = '$wflows' order by batch_id desc limit 4;" | psql -d niara | sed '1,2d' | awk '{print $1,$3}' | head -n -2 >> failedbatches.txt;
         done < failedWF.txt
 python workflow.py failedbatches.txt
 echo "DROP view IF EXISTS jointly;" | psql -d niara
