@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 import os, sys
 import subprocess
+import re
 from fnmatch import fnmatch
 
 def flocation(pattern, s1, workflow):
@@ -15,7 +16,8 @@ def flocation(pattern, s1, workflow):
                               if any(part in line for part in "Start workflow "+s1):
                                    begin="Start workflow "+workflow
                                    end="Finish workflow "+s1
-                                   file1.write(subprocess.call(['sed', 's/begin/end/g',route]))
+                                   pattern="'/" +begin + "/,/" +end+"/p'"
+                                   file1.write(subprocess.call("sed -n "+pattern + " "+route, shell=True))
                     
 if __name__ == '__main__':
     workflows= ['BatchDataBackupPipeLine', 'CefFeyeCorrPipeLine', 'EntityScoring', 'EventAggregator', 'FeedPipeLine', 'FilePurger', 'LogIngestionPipeLine' 'ObjectPipeLine', 'RetentionPurgerPipeLine',
@@ -58,6 +60,30 @@ if __name__ == '__main__':
                         flocation(pattern, s1, workflow)
                    elif s1 == 'WatchlistPurger':
                         pattern = 'watchlist_purger.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'BatchDataBackupPipeLine':
+                        pattern = 'batch_data_backup.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'FeedPipeLine':
+                        pattern = 'feed.l*'
+                        flocation(pattern, s1, workflow)
+                    elif s1 == 'FilePurger':
+                        pattern = 'fs_purger.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'LogIngestionPipeLine':
+                        pattern = 'log_workflow.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'RuleEnginePipeLine':
+                        pattern = 'rule_engine.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'EventGenerator':
+                        pattern = 'watchlist_purger.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'ObjectPipeLine':
+                        pattern = 'object_workflow.l*'
+                        flocation(pattern, s1, workflow)
+                   elif s1 == 'RetentionPurgerPipeLine':
+                        pattern = 'retention_purger.lo*'
                         flocation(pattern, s1, workflow)
                    else:
                         print "Done"
