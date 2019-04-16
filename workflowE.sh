@@ -5,5 +5,5 @@ while read wflows
         do
         echo "select name, batch_id from jointly where name = '$wflows' order by batch_id desc limit 7;" | psql -d niara | sed '1,2d' | awk '{print $1,$3}' | head -n -2 >> failedbatches.txt;
         done < failedWF.txt
-python workflow.py failedbatches.txt
+python workflowE.py failedbatches.txt
 echo "DROP view IF EXISTS jointly;" | psql -d niara
