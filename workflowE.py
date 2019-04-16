@@ -1,131 +1,60 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
-import os, sys
-import subprocess
+import os
 from fnmatch import fnmatch
+import subprocess
+import sys
 
-def flocation(pattern, s2, startwf):
-    path='/var/log/analyzer_sched'
+def sedprocess(pattern, startwf, s2):
+    path="/var/log/analyzer_sched"
     for path, subdirs, files in os.walk(path):
         for filename in files:
             if fnmatch(filename, pattern):
-                route = path+'/'+filename
+                route=os.path.join(path, filename)
                 try:
-                    with open(route , "r|*") as logfile, open(s2 + ".txt", "w") as file1:
+                    with open(route, 'r|*') as logfile:
                         for logline in logfile:
-                            part="Start workflow "+startwf
-                            if part in logline:
-                                end="Start workflow "
-                                cmd = ["sed", "-n", "/"+part+"/,/"+end+"/p", route]
+                            begin = "Start workflow "+startwf
+                            end = "Start workflow "+s2
+                            if begin in logline:
+                                file1 = open(s2+".txt", 'w|*')
+                                cmd = ["sed", "-n", "/"+begin+"/,/"+end+"/p", route]
                                 subprocess.call(cmd, stdout=file1)
-                                #file1.writelines(str(subprocess.call("sed -n "+"'/"+part+"/,/"+end+"/p' "+route + "\n", shell=True)))
-                except IOERROR as (errno, strerror):
-                    print "IO ERROR".format(errno, strerror)
+                                file1.close()
+                except IOError as (errno, strerr):
+                    return "IOError".format(errno, strerr)
 
+def __main__():
+    with open(sys.argv[1], 'r|') as inputf:
+        for line in inputf:
+            batchID = line.split(' ')[1].strip()
+            IS_WF = {
+            "BatchDataBackupPipeLine":["batch_data_backup*", "BatchDataBackupWorkflow "+batchID, "BatchDataBackupWorkflow"],
+            "CacheTransform":["cache_transform*", "CacheTransformWorkflows "+batchID, "CacheTransformWorkflows"],
+            "CefFeyeCorrPipeLine":["cef_feye_corr*", "CefFeyeDataProcessor "+batchID, "CefFeyeDataProcessor"],
+            "CorrelationBulkLoader":["corr_bulkloader*", "CorrelateWorkflow "+batchID, "CorrelateWorkflow"],
+            "EflowCorrelation": ["eflow_corr*", line.strip(), "EflowCorrelation"],
+            "EntityAuthProfiler":["entity_auth_profiling*", "EntityAuthProfiling "+batchID, "EntityAuthProfiling"],
+            "EntityScoring":["entity_scoring*", "EntityScoringWorkflow "+batchID, "EntityScoringWorkflow"],
+            "EventAggregator":["event_aggregator*", "EventAggregation "+batchID, "EventAggregation"],
+            "EventGenerator":["analyzer_event*", "AnalyzerEvent "+batchID, "AnalyzerEvent"],
+            "FeedPipeLine":["feed*", "Feed "+batchID, "Feed"],
+            "FilePurger":["fs_purger*", "FSPurgeWorkflow "+batchID, "FSPurgeWorkflow" ],
+            "GenericUBA":["generic_uba*", line.strip(), "GenericUBA"],
+            "LogIngestionPipeLine":["log_workflow*", "LogEtlWorkflow "+batchID, "LogEtlWorkflow"],
+            "ObjectPipeLine":["object_workflow*", "ObjectWorkflow "+batchID, "ObjectWorkflow"],
+            "RetentionPurgerPipeLine":["retention_purger*", "RetentionPurgeWorkflow "+batchID, "RetentionPurgeWorkflow"],
+            "RuleEnginePipeLine":["rule_engine*", "RuleEngineDriver "+batchID, "RuleEngineDriver"],
+            "ThreatCentralUploader":["threat_central_uploader*", line.strip(), "ThreatCentralUploader"],
+            "UserTimeline":["user_timeline*", line.strip(), "UserTimeline"],
+            "WatchlistPurger":["watchlist_purger*", line.strip(), "WatchlistPurger"]
+            };
+            for (k,v) in IS_WF.items():
+                if k in line:
+                    pattern = IS_WF[k][0]
+                    startwf = IS_WF[k][1]
+                    s2 =  IS_WF[k][2]
+                    sedprocess(pattern, startwf, s2)
+      
 if __name__ == '__main__':
-    workflows= ['BatchDataBackupPipeLine', 'CefFeyeCorrPipeLine', 'EntityScoring', 'EventAggregator', 'FeedPipeLine', 'FilePurger', 'LogIngestionPipeLine' 'ObjectPipeLine', 'RetentionPurgerPipeLine',
-                'ThreatCentralUploader', 'UserTimeline', 'WatchlistPurger', 'GenericUBA', 'EflowCorrelation', 'CorrelationBulkLoader', 'EntityAuthProfiler', 'RuleEnginePipeLine', 'EventGenerator',
-                'CacheTransform']
-    with open (sys.argv[1], 'r') as inputf:
-         for line in inputf:
-              if any(word in line for word in workflows):
-                   s1 = line.split(' ')[0]
-                   if s1 == 'EflowCorrelation':
-                        pattern = 'eflow_corr.l*'
-                        startwf = line
-                        s2 = line.split(' ')[0]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'GenericUBA':
-                        pattern = 'generic_uba.l*'
-                        s2 = line.split(' ')[0]
-                        startwf = line
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'CacheTransform':
-                        pattern = 'cache_transform.l*'
-                        s2 = "CacheTransformWorkflows"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'CefFeyeCorrPipeLine':
-                        pattern = 'cef_feye_corr.l*'
-                        s2 = "CefFeyeDataProcessor"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'CorrelationBulkLoader':
-                        pattern = 'corr_bulkloader.l*'
-                        s2 = "CorrelateWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'EntityAuthProfiler':
-                        pattern = 'entity_auth_profiling.l*'
-                        s2 = "EntityAuthProfiling"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'EntityScoring':
-                        pattern = 'entity_scoring.l*'
-                        s2 = "EntityScoringWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'EventAggregator':
-                        pattern = 'event_aggregator.l*'
-                        s2 = "EventAggregation"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'ThreatCentralUploader':
-                        pattern = 'threat_central_uploader.l*'
-                        startwf = line
-                        s2 = line.split(' ')[0]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'UserTimeline':
-                        pattern = 'user_timeline.l*'
-                        startwf = line
-                        s2 = line.split(' ')[0]
-                        flocation(pattern, s1, startwf)
-                   elif s1 == 'WatchlistPurger':
-                        pattern = 'watchlist_purger.l*'
-                        s2 = line.split(' ')[0]
-                        startwf = line
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'BatchDataBackupPipeLine':
-                        pattern = 'batch_data_backup.l*'
-                        s2 = "BatchDataBackupWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'FeedPipeLine':
-                        pattern = 'feed.l*'
-                        s2 = "Feed"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'FilePurger':
-                        pattern = 'fs_purger.l*'
-                        s2 = "FSPurgeWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'LogIngestionPipeLine':
-                        pattern = 'log_workflow.l*'
-                        s2 = "LogEtlWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'RuleEnginePipeLine':
-                        pattern = 'rule_engine.l*'
-                        s2 = "RuleEngineDriver"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'EventGenerator':
-                        pattern = 'analyzer_event.l*'
-                        s2 = "AnalyzerEvent"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'ObjectPipeLine':
-                        pattern = 'object_workflow.l*'
-                        s2 = "ObjectWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2, startwf)
-                   elif s1 == 'RetentionPurgerPipeLine':
-                        pattern = 'retention_purger.lo*'
-                        s2 = "RetentionPurgeWorkflow"
-                        startwf = s2+" "+line.split(' ')[1]
-                        flocation(pattern, s2. startwf)
-                   else:
-                        print "Couldn't find"
-                    
-pass
+    __main__()
